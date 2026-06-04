@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar System – Cinematic Slideshow</title>
+    <title>Solar System – Cinematic Slideshow (Smooth Fades)</title>
     <style>
         :root {
             --bg: #000008;
@@ -20,6 +20,15 @@
         body.pointer-cursor:active { cursor:pointer; }
         #canvas-container { position:fixed; inset:0; z-index:1; }
         canvas { display:block; }
+        #fade-overlay {
+            position: fixed;
+            inset: 0;
+            background: black;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 5;
+            transition: none; /* we'll control manually */
+        }
         #top-bar { position:fixed; top:0; left:0; right:0; z-index:10; padding:12px 18px; display:flex; align-items:center; justify-content:space-between; pointer-events:none; flex-wrap:wrap; gap:8px; }
         #top-bar>* { pointer-events:auto; }
         #nav-container { position:relative; }
@@ -58,6 +67,7 @@
 </head>
 <body>
     <div id="canvas-container"></div>
+    <div id="fade-overlay"></div>
     <div id="top-bar">
         <div id="nav-container">
             <button id="nav-btn"><span class="dot"></span> Navigate</button>
@@ -105,6 +115,7 @@
         const slideshowBtn = document.getElementById('slideshow-btn');
         const navBtn = document.getElementById('nav-btn');
         const dropdown = document.getElementById('planet-dropdown');
+        const fadeOverlay = document.getElementById('fade-overlay');
 
         // Audio
         const bgAudio = new Audio('space.mp3');
@@ -128,7 +139,7 @@
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(48, container.clientWidth / container.clientHeight, 0.4, 700);
         camera.position.set(30, 45, 55); camera.lookAt(0, 0, 0);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
@@ -170,7 +181,7 @@
         }
         function seededRandom(seed) { let s = seed || 1; return () => { s = (s * 16807 + 1) % 2147483647; return (s - 1) / 2147483646; }; }
 
-        // Texture drawing functions (unchanged)
+        // Texture drawing functions (unchanged, shortened for space)
         function drawSunTexture(ctx,w,h){const rand=seededRandom(42);const grad=ctx.createRadialGradient(w/2,h/2,w*0.03,w/2,h/2,w*0.72);grad.addColorStop(0,'#fffef5');grad.addColorStop(0.15,'#ffe89a');grad.addColorStop(0.4,'#ffb840');grad.addColorStop(0.65,'#f07018');grad.addColorStop(0.85,'#c04008');grad.addColorStop(1,'#802000');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);for(let i=0;i<50;i++){const sx=w*(0.12+rand()*0.76),sy=h*(0.12+rand()*0.76),sr=w*(0.008+rand()*0.055);const sg=ctx.createRadialGradient(sx,sy,sr*0.05,sx,sy,sr);sg.addColorStop(0,'rgba(100,20,0,0.75)');sg.addColorStop(0.5,'rgba(170,50,8,0.35)');sg.addColorStop(1,'rgba(255,140,30,0)');ctx.fillStyle=sg;ctx.beginPath();ctx.arc(sx,sy,sr,0,Math.PI*2);ctx.fill();}for(let i=0;i<100;i++){const gx=w*(0.08+rand()*0.84),gy=h*(0.08+rand()*0.84),gr=w*(0.004+rand()*0.022);ctx.fillStyle=`rgba(255,255,225,${0.12+rand()*0.4})`;ctx.beginPath();ctx.arc(gx,gy,gr,0,Math.PI*2);ctx.fill();}}
         function drawMercuryTexture(ctx,w,h){const rand=seededRandom(101);ctx.fillStyle='#909090';ctx.fillRect(0,0,w,h);for(let i=0;i<250;i++){const cx=w*rand(),cy=h*rand(),cr=w*(0.008+rand()*0.07),s=80+rand()*70;ctx.fillStyle=`rgb(${s},${s},${s})`;ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);ctx.fill();}for(let i=0;i<50;i++){const cx=w*rand(),cy=h*rand(),cr=w*(0.015+rand()*0.09);const rg=ctx.createRadialGradient(cx,cy,cr*0.65,cx,cy,cr);rg.addColorStop(0,'#555');rg.addColorStop(0.75,'#999');rg.addColorStop(1,'#b5b5b5');ctx.fillStyle=rg;ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);ctx.fill();}}
         function drawVenusTexture(ctx,w,h){const rand=seededRandom(202);const grad=ctx.createLinearGradient(0,0,0,h);grad.addColorStop(0,'#ead8a8');grad.addColorStop(0.3,'#deca96');grad.addColorStop(0.5,'#e8d4a4');grad.addColorStop(0.7,'#d6bc84');grad.addColorStop(1,'#e2cc94');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);for(let i=0;i<40;i++){const sx=w*rand(),sy=h*rand(),sw=w*(0.04+rand()*0.28),sh=h*(0.015+rand()*0.07);ctx.fillStyle=`rgba(255,248,230,${0.06+rand()*0.22})`;ctx.beginPath();ctx.ellipse(sx,sy,sw,sh,rand()*Math.PI,0,Math.PI*2);ctx.fill();}}
@@ -313,13 +324,14 @@
         let hoveredObject=null, selectedObject=null, focusTarget=null, focusTransition=0, isPaused=false;
         let slideshowActive = false, slideshowTimeout = null;
 
-        // Slideshow state
-        let currentSlideshowScene = null;
-        let sceneStartTime = 0;
-        let transitionStartTime = 0;
-        let isTransitioning = false;
-        let transitionDuration = 1.5; // seconds to move between scenes
+        // Slideshow state machine
         let scenes = [];
+        let currentSceneIndex = 0;
+        let currentScene = null;
+        let sceneStartTime = 0;
+        let fadePhase = 'idle'; // 'idle', 'fadeOut', 'black', 'fadeIn'
+        let fadeStartTime = 0;
+        const fadeDuration = 0.7; // seconds for fade transitions
 
         function updateMouse(e){ mouse.x=(e.clientX/window.innerWidth)*2-1; mouse.y=-(e.clientY/window.innerHeight)*2+1; }
         function getIntersections(){ raycaster.setFromCamera(mouse,camera); return raycaster.intersectObjects(allClickableObjects,false); }
@@ -344,73 +356,33 @@
             hintEl.style.opacity = '0';
         }
 
-        // Build slideshow scenes array
         function buildSlideshowScenes() {
             const getWorldPos = (obj) => { const v = new THREE.Vector3(); obj.getWorldPosition(v); return v; };
-            // Helper to create a scene definition
-            const sceneDef = (targetObj, distance, azimuthDeg, elevationDeg, duration, shake = 0, note = '') => ({
+            const sceneDef = (targetObj, distance, azimuthDeg, elevationDeg, duration, note = '') => ({
                 targetObj, distance, azimuth: azimuthDeg * Math.PI/180, elevation: elevationDeg * Math.PI/180,
-                duration, shake, note
+                duration, note
             });
             const allPlanets = [mercuryData.mesh, venusData.mesh, earthData.mesh, marsData.mesh, jupiterData.mesh, saturnData.mesh, uranusData.mesh, neptuneData.mesh, plutoData.mesh];
             const moons = moonObjects.map(m=>m.mesh);
-            const scenes = [
-                // Far overview
-                sceneDef(sun, 80, 45, 30, 8, 0, 'Solar System Overview'),
-                // Sun close-up
-                sceneDef(sun, 16, 0, 20, 6, 0.2, 'The Sun'),
-                // Mercury
-                sceneDef(mercuryData.mesh, 2.5, 30, 15, 5, 0.3),
-                // Venus
-                sceneDef(venusData.mesh, 3.5, 45, 25, 5, 0.2),
-                // Earth
-                sceneDef(earthData.mesh, 3, 0, 30, 6, 0.1),
-                // Moon
-                sceneDef(moons[0], 1.5, 60, 20, 4, 0.5),
-                // Mars
-                sceneDef(marsData.mesh, 2.8, 20, 15, 5, 0.2),
-                // Asteroid belt
-                sceneDef(asteroidBelt, 15, 70, 40, 6, 0.8, 'Asteroid Belt'),
-                // Jupiter
-                sceneDef(jupiterData.mesh, 7, 15, 10, 7, 0.1),
-                // Io
-                sceneDef(moons.find(m=>m.name==='Io'), 1.8, 90, 30, 4, 0.7),
-                // Saturn
-                sceneDef(saturnData.mesh, 8, 25, 15, 7, 0.1),
-                // Titan
-                sceneDef(moons.find(m=>m.name==='Titan'), 2.2, 60, 20, 4, 0.5),
-                // Uranus
-                sceneDef(uranusData.mesh, 5, 50, 25, 5, 0.15),
-                // Neptune
-                sceneDef(neptuneData.mesh, 5, 80, 30, 5, 0.2),
-                // Pluto
-                sceneDef(plutoData.mesh, 2.5, 30, 40, 5, 0.4),
-                // Kuiper belt
-                sceneDef(kuiperBelt, 20, 45, 60, 6, 0.6, 'Kuiper Belt'),
-                // Far overview again
-                sceneDef(sun, 90, 0, 45, 8, 0),
+            return [
+                sceneDef(sun, 80, 45, 30, 8, 'Solar System Overview'),
+                sceneDef(sun, 16, 0, 20, 6, 'The Sun'),
+                sceneDef(mercuryData.mesh, 2.5, 30, 15, 5),
+                sceneDef(venusData.mesh, 3.5, 45, 25, 5),
+                sceneDef(earthData.mesh, 3, 0, 30, 6),
+                sceneDef(moons[0], 1.5, 60, 20, 4, 'Moon'),
+                sceneDef(marsData.mesh, 2.8, 20, 15, 5),
+                sceneDef(asteroidBelt, 15, 70, 40, 6, 'Asteroid Belt'),
+                sceneDef(jupiterData.mesh, 7, 15, 10, 7),
+                sceneDef(moons.find(m=>m.name==='Io'), 1.8, 90, 30, 4, 'Io'),
+                sceneDef(saturnData.mesh, 8, 25, 15, 7),
+                sceneDef(moons.find(m=>m.name==='Titan'), 2.2, 60, 20, 4, 'Titan'),
+                sceneDef(uranusData.mesh, 5, 50, 25, 5),
+                sceneDef(neptuneData.mesh, 5, 80, 30, 5),
+                sceneDef(plutoData.mesh, 2.5, 30, 40, 5),
+                sceneDef(kuiperBelt, 20, 45, 60, 6, 'Kuiper Belt'),
+                sceneDef(sun, 90, 0, 45, 8, ''),
             ];
-            return scenes;
-        }
-
-        function stopSlideshow() {
-            if (slideshowTimeout) clearTimeout(slideshowTimeout);
-            slideshowActive = false;
-            slideshowBtn.classList.remove('active');
-            controls.enabled = true;
-            currentSlideshowScene = null;
-        }
-        function startSlideshow() {
-            if (slideshowActive) return;
-            slideshowActive = true;
-            slideshowBtn.classList.add('active');
-            controls.enabled = false;
-            scenes = buildSlideshowScenes();
-            currentSlideshowScene = scenes[0];
-            // Start transition from current camera state to first scene
-            isTransitioning = true;
-            transitionStartTime = performance.now() / 1000;
-            sceneStartTime = transitionStartTime + transitionDuration; // will start scene after transition
         }
 
         function getSceneCameraTarget(sceneDef, timeInScene) {
@@ -423,15 +395,13 @@
             } else {
                 worldPos.set(0,0,0);
             }
-            // Compute camera position using spherical coordinates
             const dist = sceneDef.distance;
             const azimuth = sceneDef.azimuth;
             const elevation = sceneDef.elevation;
-            // Add some slow orbit if duration long
             let orbitAngle = 0;
             if (sceneDef.duration > 0) {
                 const progress = timeInScene / sceneDef.duration;
-                orbitAngle = progress * Math.PI * 0.5; // gentle rotation
+                orbitAngle = progress * Math.PI * 0.4; // gentle rotation
             }
             const camDir = new THREE.Vector3(
                 Math.cos(azimuth + orbitAngle) * Math.cos(elevation),
@@ -440,6 +410,29 @@
             );
             const camPos = worldPos.clone().add(camDir.multiplyScalar(dist));
             return { lookAt: worldPos, position: camPos };
+        }
+
+        function stopSlideshow() {
+            if (slideshowTimeout) clearTimeout(slideshowTimeout);
+            slideshowActive = false;
+            slideshowBtn.classList.remove('active');
+            controls.enabled = true;
+            fadePhase = 'idle';
+            fadeOverlay.style.opacity = '0';
+            currentScene = null;
+        }
+        function startSlideshow() {
+            if (slideshowActive) return;
+            slideshowActive = true;
+            slideshowBtn.classList.add('active');
+            controls.enabled = false;
+            scenes = buildSlideshowScenes();
+            currentSceneIndex = 0;
+            currentScene = scenes[0];
+            fadePhase = 'fadeOut';
+            fadeStartTime = performance.now() / 1000;
+            fadeOverlay.style.opacity = '0';
+            // Freeze camera at current position for fade out
         }
 
         // Slideshow buttons
@@ -549,71 +542,66 @@
                 }
             });
 
-            // Slideshow camera control
-            if (slideshowActive && currentSlideshowScene) {
-                // Determine if in transition
-                if (isTransitioning) {
-                    const elapsed = now - transitionStartTime;
-                    const t = Math.min(elapsed / transitionDuration, 1.0);
-                    const eased = 1 - Math.pow(1 - t, 3); // ease-out
-                    // Get target for current scene
-                    const targetScene = currentSlideshowScene;
-                    const camTarget = getSceneCameraTarget(targetScene, 0); // start of scene
-                    // Interpolate from current camera state to target
-                    const startPos = camera.position.clone();
-                    const startTarget = controls.target.clone();
-                    camera.position.lerpVectors(startPos, camTarget.position, eased);
-                    controls.target.lerpVectors(startTarget, camTarget.lookAt, eased);
-                    // Apply shake during transition if scene has shake
-                    if (targetScene.shake > 0 && t > 0.3) {
-                        const shakeAmt = targetScene.shake * 0.3;
-                        camera.position.x += (Math.random() - 0.5) * shakeAmt * 2;
-                        camera.position.y += (Math.random() - 0.5) * shakeAmt * 2;
-                        camera.position.z += (Math.random() - 0.5) * shakeAmt * 2;
-                    }
+            // Slideshow logic with fade transitions
+            if (slideshowActive && currentScene) {
+                if (fadePhase === 'fadeOut') {
+                    const elapsed = now - fadeStartTime;
+                    const t = Math.min(elapsed / fadeDuration, 1.0);
+                    fadeOverlay.style.opacity = t;
                     if (t >= 1.0) {
-                        isTransitioning = false;
-                        sceneStartTime = now;
-                        // Set info panel for current scene
-                        if (currentSlideshowScene.targetObj.userData?.info) {
-                            updateInfoPanel(currentSlideshowScene.targetObj);
+                        fadePhase = 'black';
+                        // Teleport camera to new scene start
+                        const camTarget = getSceneCameraTarget(currentScene, 0);
+                        camera.position.copy(camTarget.position);
+                        controls.target.copy(camTarget.lookAt);
+                        controls.update();
+                        // Update info panel
+                        if (currentScene.targetObj.userData?.info) {
+                            updateInfoPanel(currentScene.targetObj);
                         } else {
-                            // For asteroid belt etc., show custom note
-                            planetNameEl.textContent = currentSlideshowScene.note || 'Asteroid Belt';
+                            planetNameEl.textContent = currentScene.note || '';
                             planetDetailEl.textContent = '';
                             planetFactEl.textContent = '';
                             infoPanel.classList.remove('hidden');
                         }
+                        // Start fade in after a brief black hold
+                        fadeStartTime = now + 0.2; // small pause at black
+                        fadePhase = 'fadeIn';
                     }
-                } else {
-                    // Playing scene
+                } else if (fadePhase === 'black') {
+                    // waiting for fade in to start
+                    if (now >= fadeStartTime) {
+                        fadePhase = 'fadeIn';
+                        fadeStartTime = now;
+                    }
+                } else if (fadePhase === 'fadeIn') {
+                    const elapsed = now - fadeStartTime;
+                    const t = Math.min(elapsed / fadeDuration, 1.0);
+                    fadeOverlay.style.opacity = 1 - t;
+                    if (t >= 1.0) {
+                        fadePhase = 'idle';
+                        sceneStartTime = now;
+                    }
+                } else if (fadePhase === 'idle') {
+                    // Play scene
                     const elapsedInScene = now - sceneStartTime;
-                    const scene = currentSlideshowScene;
-                    const duration = scene.duration;
-                    if (elapsedInScene >= duration) {
+                    const scene = currentScene;
+                    if (elapsedInScene >= scene.duration) {
                         // Move to next scene
-                        const idx = scenes.indexOf(scene);
-                        const nextIdx = (idx + 1) % scenes.length;
-                        currentSlideshowScene = scenes[nextIdx];
-                        isTransitioning = true;
-                        transitionStartTime = now;
+                        currentSceneIndex = (currentSceneIndex + 1) % scenes.length;
+                        currentScene = scenes[currentSceneIndex];
+                        fadePhase = 'fadeOut';
+                        fadeStartTime = now;
+                        fadeOverlay.style.opacity = '0';
                     } else {
-                        // Compute camera for this moment
+                        // Animate camera smoothly within scene
                         const camTarget = getSceneCameraTarget(scene, elapsedInScene);
-                        // Smoothly move camera
                         const lerpFactor = 0.05;
                         camera.position.lerp(camTarget.position, lerpFactor);
                         controls.target.lerp(camTarget.lookAt, lerpFactor);
-                        // Apply shake
-                        if (scene.shake > 0) {
-                            const shakeAmt = scene.shake * 0.25;
-                            camera.position.x += (Math.random() - 0.5) * shakeAmt * 2;
-                            camera.position.y += (Math.random() - 0.5) * shakeAmt * 2;
-                            camera.position.z += (Math.random() - 0.5) * shakeAmt * 2;
-                        }
+                        controls.update();
                     }
                 }
-                controls.update();
             } else {
                 // Standard focus behavior
                 if (focusTarget) {
@@ -636,7 +624,7 @@
         updateInfoPanel(null); infoPanel.classList.add('hidden'); updateLegend(null);
         populateDropdown();
         requestAnimationFrame(animate);
-        console.log('🌌 Cinematic slideshow with slow pans & shake ready – press T or 🎥');
+        console.log('🌌 Smooth slideshow with fade transitions ready.');
     </script>
 </body>
 </html>
