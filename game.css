@@ -1,0 +1,95 @@
+#game-ui {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+}
+
+#game-top-bar {
+    position: fixed;
+    top: 65px;
+    left: 18px;
+    display: flex;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+#game-exit-btn {
+    background: rgba(200, 50, 50, 0.4);
+    border-color: rgba(255, 100, 100, 0.5);
+}
+
+#game-exit-btn:hover {
+    background: rgba(220, 40, 40, 0.6);
+    box-shadow: 0 0 15px rgba(255, 80, 80, 0.5);
+}
+
+#game-controls {
+    position: fixed;
+    bottom: 30px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 40px;
+    pointer-events: none;
+}
+
+.pad {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto;
+}
+
+.pad-row {
+    display: flex;
+    gap: 8px;
+}
+
+.game-ctrl {
+    background: rgba(30, 40, 70, 0.7);
+    border: 1px solid rgba(120, 160, 255, 0.3);
+    color: #c8d6f8;
+    border-radius: 12px;
+    padding: 15px 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    /* Prevents mobile scrolling while holding */
+}
+
+.game-ctrl:active {
+    background: rgba(120, 160, 255, 0.4);
+    transform: scale(0.94);
+    box-shadow: 0 0 15px rgba(120, 160, 255, 0.5);
+}
+
+.game-ctrl.thrust {
+    background: rgba(60, 180, 120, 0.4);
+    border-color: rgba(100, 220, 150, 0.5);
+}
+
+.game-ctrl.thrust:active {
+    background: rgba(60, 180, 120, 0.7);
+    box-shadow: 0 0 20px rgba(100, 255, 150, 0.4);
+}
+
+@media (max-width: 768px) {
+    #game-controls {
+        padding: 0 15px;
+        bottom: 15px;
+    }
+
+    .game-ctrl {
+        padding: 10px 12px;
+        font-size: 0.7rem;
+    }
+}
