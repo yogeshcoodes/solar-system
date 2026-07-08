@@ -761,7 +761,14 @@
             });
         });
 
-        let globalSpeed = 0.1;
+        // Set default speed to 0.01x (Slider value 1 = 0.01 / 100)
+        let globalSpeed = 0.01;
+        let savedSpeed = 0.01;
+
+        // Update the slider's initial position to match the 0.01x speed
+        speedSlider.value = 1;
+        speedValueEl.textContent = '0.01×';
+
         speedSlider.addEventListener('input', () => {
             const val = parseInt(speedSlider.value);
             globalSpeed = val / 100;
@@ -1197,8 +1204,45 @@
             return { lookAt: lookTarget, position: worldPos.clone().add(camDir.multiplyScalar(sceneDef.distance)) };
         }
 
-        function stopSlideshow() { slideshowActive = false; slideshowBtn.classList.remove('active'); controls.enabled = true; fadePhase = 'idle'; fadeOverlay.style.opacity = '0'; currentScene = null; }
-        function startSlideshow() { if (slideshowActive) return; slideshowActive = true; slideshowBtn.classList.add('active'); controls.enabled = false; scenes = buildSlideshowScenes(); currentSceneIndex = 0; currentScene = scenes[0]; fadePhase = 'fadeOut'; fadeStartTime = performance.now() / 1000; fadeOverlay.style.opacity = '0'; }
+        function stopSlideshow() {
+            slideshowActive = false;
+            slideshowBtn.classList.remove('active');
+            controls.enabled = true;
+            fadePhase = 'idle';
+            fadeOverlay.style.opacity = '0';
+            currentScene = null;
+
+            // Restore previous speed and unlock slider
+            globalSpeed = savedSpeed;
+            speedSlider.value = globalSpeed * 100;
+            speedValueEl.textContent = globalSpeed.toFixed(2) + '×';
+            speedSlider.disabled = false;
+            speedSlider.style.opacity = '1';
+            speedSlider.style.cursor = 'pointer';
+        }
+
+        function startSlideshow() {
+            if (slideshowActive) return;
+            slideshowActive = true;
+            slideshowBtn.classList.add('active');
+            controls.enabled = false;
+            scenes = buildSlideshowScenes();
+            currentSceneIndex = 0;
+            currentScene = scenes[0];
+            fadePhase = 'fadeOut';
+            fadeStartTime = performance.now() / 1000;
+            fadeOverlay.style.opacity = '0';
+
+            // Save current speed, set to 0, and lock slider
+            savedSpeed = globalSpeed;
+            globalSpeed = 0;
+            speedSlider.value = 0;
+            speedValueEl.textContent = '0.00×';
+            speedSlider.disabled = true;
+            speedSlider.style.opacity = '0.4';
+            speedSlider.style.cursor = 'not-allowed';
+        }
+
         slideshowBtn.addEventListener('click', (e) => { e.stopPropagation(); if (slideshowActive) stopSlideshow(); else startSlideshow(); });
 
         function populateDropdown() {
