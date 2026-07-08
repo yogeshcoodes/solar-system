@@ -172,7 +172,7 @@ export class SpaceGame {
         // --- READ INPUTS ---
         const thrustInput = (this.keys['w'] ? 1 : 0) - (this.keys['s'] ? 1 : 0);
         const yawInput = ((this.keys['arrowleft'] || this.keys['a']) ? 1 : 0) - ((this.keys['arrowright'] || this.keys['d']) ? 1 : 0);
-        const pitchInput = (this.keys['arrowup'] ? 1 : 0) - (this.keys['arrowdown'] ? 1 : 0);
+        const pitchInput = (this.keys['arrowdown'] ? 1 : 0) - (this.keys['arrowup'] ? 1 : 0);
 
         // --- SPEED LOGIC ---
         // Hold SHIFT to engage hyper-speed
