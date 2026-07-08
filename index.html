@@ -18,6 +18,17 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s ease;
+            scroll-behavior: smooth;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            scrollbar-gutter: stable;
+        }
+
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar {
+            display: none;
         }
 
         body {
@@ -69,7 +80,7 @@
             top: 0;
             left: 0;
             right: 0;
-            z-index: 10;
+            z-index: 100;
             padding: 12px 18px;
             display: flex;
             align-items: center;
@@ -152,7 +163,7 @@
             overflow-y: auto;
             display: none;
             flex-direction: column;
-            z-index: 20;
+            z-index: 120;
             box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
         }
 
@@ -380,12 +391,11 @@
             text-shadow: 0 0 8px var(--glow);
         }
 
-        /* Custom Modal Styles for Size Feature */
         #size-modal-overlay {
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.6);
-            z-index: 99;
+            z-index: 199;
             display: none;
             backdrop-filter: blur(4px);
             -webkit-backdrop-filter: blur(4px);
@@ -402,7 +412,7 @@
             border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 16px;
             padding: 20px;
-            z-index: 100;
+            z-index: 200;
             display: none;
             width: 300px;
             max-width: 90vw;
@@ -531,7 +541,6 @@
                 <span class="dot" style="background:#4ade80; box-shadow:0 0 14px #4ade80;"></span> Flight
             </button>
             <button id="settings-btn" class="ui-btn">
-
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path
@@ -623,7 +632,6 @@
         const pauseBtn = document.getElementById('pause-btn');
         const slideshowBtn = document.getElementById('slideshow-btn');
 
-        // Modal UI Elements
         const sizeModal = document.getElementById('size-modal');
         const sizeModalOverlay = document.getElementById('size-modal-overlay');
         const sizeRange = document.getElementById('size-range');
@@ -633,7 +641,6 @@
         const sizeResetBtn = document.getElementById('size-reset-btn');
         let currentSizeObj = null;
 
-        // Audio setup
         const bgAudio = new Audio('space.mp3');
         bgAudio.loop = true; bgAudio.volume = 0.4;
         let audioStarted = false;
@@ -652,7 +659,6 @@
 
         tryStartAudio();
 
-        // System UI Audio (Excluding Game Controls)
         const clickInAudio = new Audio('assets/click-in.wav');
         document.body.addEventListener('mousedown', (e) => {
             if ((e.target.closest('.ui-btn') || e.target.closest('.dropdown-item')) && !e.target.closest('.game-ctrl')) {
@@ -660,12 +666,11 @@
             }
         });
 
-        // Scene, Camera, Renderer
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(48, container.clientWidth / container.clientHeight, 0.4, 700);
         camera.position.set(30, 45, 55); camera.lookAt(0, 0, 0);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false }); // Handled by Composer Render Target
+        const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
@@ -675,16 +680,14 @@
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         container.appendChild(renderer.domElement);
 
-        // Effect Composer with MSAA Support RenderTarget
         const renderTarget = new THREE.WebGLRenderTarget(container.clientWidth, container.clientHeight, {
             type: THREE.HalfFloatType,
-            samples: 4 // Default to 4x MSAA
+            samples: 4
         });
 
         const composer = new EffectComposer(renderer, renderTarget);
         composer.addPass(new RenderPass(scene, camera));
 
-        // Slightly decreased global bloom
         const bloomPass = new UnrealBloomPass(new THREE.Vector2(container.clientWidth, container.clientHeight), 0.25, 0.4, 0.85);
         composer.addPass(bloomPass);
 
@@ -696,7 +699,6 @@
         controls.autoRotate = true; controls.autoRotateSpeed = 0.12;
         controls.enabled = true;
 
-        // Lighting
         const sunLight = new THREE.PointLight(0xfff8e7, 300, 500, 1.2);
         sunLight.position.set(0, 0, 0);
         sunLight.castShadow = true;
@@ -712,7 +714,6 @@
         const fillLight = new THREE.PointLight(0x334466, 18, 120, 2);
         fillLight.position.set(0, 35, -45); scene.add(fillLight);
 
-        // UI Interactions
         const dropdown = document.getElementById('planet-dropdown');
         const settingsDropdown = document.getElementById('settings-dropdown');
         document.getElementById('nav-btn').addEventListener('click', (e) => {
@@ -723,7 +724,6 @@
         });
         document.addEventListener('click', () => { dropdown.classList.remove('open'); settingsDropdown.classList.remove('open'); });
 
-        // Quality Settings Logic
         const qualityBtns = document.querySelectorAll('.quality-btn');
         qualityBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -734,22 +734,21 @@
                 if (q === 'low') {
                     renderer.setPixelRatio(1);
                     sunLight.shadow.mapSize.width = 512; sunLight.shadow.mapSize.height = 512;
-                    bloomPass.strength = 0.10; // Decreased
+                    bloomPass.strength = 0.10;
                 } else if (q === 'med') {
                     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
                     sunLight.shadow.mapSize.width = 1024; sunLight.shadow.mapSize.height = 1024;
-                    bloomPass.strength = 0.18; // Decreased
+                    bloomPass.strength = 0.18;
                 } else {
                     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                     sunLight.shadow.mapSize.width = 2048; sunLight.shadow.mapSize.height = 2048;
-                    bloomPass.strength = 0.25; // Decreased
+                    bloomPass.strength = 0.25;
                 }
                 sunLight.shadow.map?.dispose();
                 sunLight.shadow.map = null;
             });
         });
 
-        // Anti-Aliasing UI Logic
         const aaBtns = document.querySelectorAll('.aa-btn');
         aaBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -762,7 +761,6 @@
             });
         });
 
-        // Speed Logic
         let globalSpeed = 0.1;
         speedSlider.addEventListener('input', () => {
             const val = parseInt(speedSlider.value);
@@ -770,7 +768,6 @@
             speedValueEl.textContent = globalSpeed.toFixed(2) + '×';
         });
 
-        // Texture generators
         function seededRandom(seed) { let s = seed || 1; return () => { s = (s * 16807 + 1) % 2147483647; return (s - 1) / 2147483646; }; }
         function createCanvasTexture(width, height, drawFn) {
             const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
@@ -806,7 +803,6 @@
         const charonTexture = createCanvasTexture(256, 256, (ctx, w, h) => { const rand = seededRandom(910); ctx.fillStyle = '#b0a89a'; ctx.fillRect(0, 0, w, h); for (let i = 0; i < 80; i++) { const cx = w * rand(), cy = h * rand(), cr = w * (0.01 + rand() * 0.06), s = 130 + rand() * 50; ctx.fillStyle = `rgb(${s},${s - 5},${s - 15})`; ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.fill(); } });
         const moonTexture = createCanvasTexture(256, 256, (ctx, w, h) => { const rand = seededRandom(808); ctx.fillStyle = '#cacaca'; ctx.fillRect(0, 0, w, h); for (let i = 0; i < 120; i++) { const cx = w * rand(), cy = h * rand(), cr = w * (0.008 + rand() * 0.065), s = 135 + rand() * 90; ctx.fillStyle = `rgb(${s},${s},${s})`; ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.fill(); } for (let i = 0; i < 30; i++) { const cx = w * rand(), cy = h * rand(), cr = w * (0.025 + rand() * 0.08); const rg = ctx.createRadialGradient(cx, cy, cr * 0.55, cx, cy, cr); rg.addColorStop(0, '#999'); rg.addColorStop(0.75, '#ccc'); rg.addColorStop(1, '#e0e0e0'); ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.fill(); } });
 
-        // Size adjustment state and logic functions
         function getDefaultScale(name) {
             if (name === 'Sun') return 1.5;
             if (name === 'Saturn') return 2.5;
@@ -866,7 +862,6 @@
         sizeCloseBtn.addEventListener('click', closeSizeModal);
         sizeModalOverlay.addEventListener('click', closeSizeModal);
 
-        // Powerful GLTF Loader
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
         dracoLoader.setDecoderConfig({ type: 'js' });
@@ -980,7 +975,6 @@
             allClickableObjects.push(mesh); const obj = { mesh, pivot: moonPivot, data: mesh.userData }; moonObjects.push(obj); return obj;
         }
 
-        // Build Planets with significantly increased, more spacious gaps
         const mercuryData = createPlanet('Mercury', 0.35, 12, mercuryTexture, '#a0a0a0', 1.6, { type: 'Terrestrial Planet', detail: 'Smallest planet · No atmosphere', fact: 'Surface temps: −180°C to 430°C' }, 0.03, 'mercury.glb');
         const venusData = createPlanet('Venus', 0.72, 18, venusTexture, '#e8d5a3', 1.17, { type: 'Terrestrial Planet', detail: 'Hottest planet · Thick CO₂ atmosphere', fact: 'Rotates backward (retrograde)' }, 0.05, 'venus.glb');
         const earthData = createPlanet('Earth', 0.75, 25, earthTexture, '#4488cc', 1.0, { type: 'Terrestrial Planet', detail: 'Our home · Liquid water & life', fact: 'Only known planet to harbor life' }, 0.0, 'earth.glb');
@@ -991,7 +985,6 @@
         const neptuneData = createPlanet('Neptune', 1.75, 135, neptuneTexture, '#4068e0', 0.18, { type: 'Ice Giant', detail: 'Deep blue · Strongest winds', fact: 'Wind speeds exceed 2,100 km/h' }, 0.02, 'neptune.glb');
         const plutoData = createPlanet('Pluto', 0.5, 165, plutoTexture, '#d8d0c4', 0.14, { type: 'Dwarf Planet (Kuiper Belt)', detail: 'Reclassified in 2006 · Icy world', fact: 'Heart-shaped Tombaugh Regio on surface' }, 0.15);
 
-        // Moons
         createMoon(earthData, 'Moon', 0.2, 1.8, moonTexture, '#cccccc', 5.0, { type: 'Natural Satellite', detail: 'Earth\'s only natural satellite', fact: 'Responsible for tides on Earth' }, 'moon.glb');
         createMoon(marsData, 'Phobos', 0.08, 1.0, null, '#888888', 8.0, { type: 'Moon of Mars', detail: 'Larger moon of Mars', fact: 'Slowly spiraling toward Mars' });
         createMoon(marsData, 'Deimos', 0.06, 1.4, null, '#999999', 5.5, { type: 'Moon of Mars', detail: 'Smaller moon of Mars', fact: 'One of the smallest moons known' });
@@ -999,16 +992,12 @@
         createMoon(jupiterData, 'Europa', 0.2, 6.2, null, '#d8e8f0', 2.8, { type: 'Moon of Jupiter', detail: 'Icy surface · Subsurface ocean', fact: 'May harbor conditions for life' });
         createMoon(jupiterData, 'Ganymede', 0.26, 7.6, null, '#c8d0d8', 2.2, { type: 'Moon of Jupiter', detail: 'Largest moon in solar system', fact: 'Bigger than Mercury' });
         createMoon(jupiterData, 'Callisto', 0.24, 9.0, null, '#888898', 1.8, { type: 'Moon of Jupiter', detail: 'Heavily cratered ancient surface', fact: 'One of the oldest landscapes' });
-        // Titan's distance adjusted to 4.0 from 5.5
         createMoon(saturnData, 'Titan', 0.28, 4.0, null, '#e0c080', 2.5, { type: 'Moon of Saturn', detail: 'Thick atmosphere', fact: 'Only moon with stable surface liquids' });
         createMoon(saturnData, 'Enceladus', 0.1, 4.0, null, '#e8f0f8', 4.2, { type: 'Moon of Saturn', detail: 'Icy moon with geysers', fact: 'Erupts water into space' });
         createMoon(neptuneData, 'Triton', 0.2, 3.2, null, '#c8d8e8', 3.0, { type: 'Moon of Neptune', detail: 'Largest moon of Neptune', fact: 'Orbits in retrograde' });
         createMoon(plutoData, 'Charon', 0.14, 1.2, charonTexture, '#b0a89a', 6.5, { type: 'Moon of Pluto', detail: 'Largest moon relative to planet', fact: 'Pluto-Charon binary system' });
 
-        // Initialize Space Game Subsystem
         const spaceGame = new SpaceGame(scene, camera, controls, gltfLoader);
-
-        // Sun Initialization
 
         const sun = new THREE.Mesh(new THREE.SphereGeometry(4.5, 16, 16), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }));
         sun.name = 'Sun'; scene.add(sun);
@@ -1029,28 +1018,24 @@
         applySavedScale(sun);
         allClickableObjects.push(sun);
 
-        // Spacious Orbit lines & Asteroids
         function createOrbitLine(radius, color = 0x334466, opacity = 0.3) {
             const points = []; for (let i = 0; i <= 256; i++) { const a = (i / 256) * Math.PI * 2; points.push(new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius)); }
             return new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), new THREE.LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
         }
         [12, 18, 25, 33, 58, 80, 105, 135, 165].forEach(r => scene.add(createOrbitLine(r, 0x445566, r === 165 ? 0.12 : 0.22)));
 
-        // Relocated asteroid belt between Mars (33) and Jupiter (58)
         const asteroidGeo = new THREE.BufferGeometry(); const astPos = new Float32Array(3000 * 3), astSize = new Float32Array(3000);
         for (let i = 0; i < 3000; i++) { const a = Math.random() * Math.PI * 2, r = 40 + Math.random() * 12, h = (Math.random() - 0.5) * 2.8; astPos[i * 3] = Math.cos(a) * r; astPos[i * 3 + 1] = h; astPos[i * 3 + 2] = Math.sin(a) * r; astSize[i] = 0.03 + Math.random() * 0.24; }
         asteroidGeo.setAttribute('position', new THREE.BufferAttribute(astPos, 3)); asteroidGeo.setAttribute('size', new THREE.BufferAttribute(astSize, 1));
         const asteroidBelt = new THREE.Points(asteroidGeo, new THREE.PointsMaterial({ size: 0.16, color: 0x998877, blending: THREE.NormalBlending, depthWrite: true, transparent: true, opacity: 0.78, sizeAttenuation: true }));
         scene.add(asteroidBelt);
 
-        // Relocated Kuiper belt past Pluto (165)
         const kuipGeo = new THREE.BufferGeometry(); const kuipPos = new Float32Array(4500 * 3), kuipSize = new Float32Array(4500), kuipCol = new Float32Array(4500 * 3);
         for (let i = 0; i < 4500; i++) { const a = Math.random() * Math.PI * 2, r = 175 + Math.random() * 60 + (Math.random() < 0.08 ? Math.random() * 25 : 0), h = (Math.random() - 0.5) * 8; kuipPos[i * 3] = Math.cos(a) * r; kuipPos[i * 3 + 1] = h; kuipPos[i * 3 + 2] = Math.sin(a) * r; kuipSize[i] = 0.02 + Math.random() * 0.2; kuipCol[i * 3] = 0.55 + Math.random() * 0.3; kuipCol[i * 3 + 1] = 0.6 + Math.random() * 0.28; kuipCol[i * 3 + 2] = 0.7 + Math.random() * 0.3; }
         kuipGeo.setAttribute('position', new THREE.BufferAttribute(kuipPos, 3)); kuipGeo.setAttribute('size', new THREE.BufferAttribute(kuipSize, 1)); kuipGeo.setAttribute('color', new THREE.BufferAttribute(kuipCol, 3));
         const kuiperBelt = new THREE.Points(kuipGeo, new THREE.PointsMaterial({ size: 0.15, vertexColors: true, blending: THREE.NormalBlending, depthWrite: true, transparent: true, opacity: 0.7, sizeAttenuation: true }));
         scene.add(kuiperBelt);
 
-        // Extended Comets
         const cometGroup = new THREE.Group(); scene.add(cometGroup);
         const cometParticles = [];
         for (let i = 0; i < 10; i++) {
@@ -1064,7 +1049,6 @@
             cometParticles.push({ mesh, trail, trailPositions: trailArr, trailLength: trailLen, angle: Math.random() * Math.PI * 2, orbitRadius: 50 + Math.random() * 130, speed: 0.25 + Math.random() * 0.8, height: (Math.random() - 0.5) * 35, phase: Math.random() * Math.PI * 2, visible: false, lifeTimer: 0, maxLife: 6 + Math.random() * 22, cooldown: Math.random() * 35 });
         }
 
-        // Camera Tracking State variables
         const raycaster = new THREE.Raycaster(); raycaster.params.Points.threshold = 0.5;
         const mouse = new THREE.Vector2();
         let hoveredObject = null, selectedObject = null, focusTarget = null, focusTransition = 0, isPaused = false;
@@ -1145,7 +1129,8 @@
 
         const keyMap = { '0': sun, '1': mercuryData.mesh, '2': venusData.mesh, '3': earthData.mesh, '4': marsData.mesh, '5': jupiterData.mesh, '6': saturnData.mesh, '7': uranusData.mesh, '8': neptuneData.mesh, '9': plutoData.mesh };
         window.addEventListener('keydown', (e) => {
-            const k = e.key.toLowerCase(); if (k === ' ') { e.preventDefault(); togglePause(); return; }
+            const k = e.key.toLowerCase();
+            if (k === ' ') { e.preventDefault(); if (!spaceGame.isActive) togglePause(); return; }
             if (k === 't') { e.preventDefault(); if (slideshowActive) stopSlideshow(); else startSlideshow(); return; }
             if (keyMap[k]) { stopSlideshow(); if (selectedObject !== keyMap[k]) focusOnObject(keyMap[k]); return; }
             if (k === 'r') { stopSlideshow(); focusTarget = null; selectedObject = null; controls.target.set(0, 0, 0); controls.autoRotate = true; clearInfoPanel(); }
@@ -1157,22 +1142,61 @@
         function togglePause() { isPaused = !isPaused; pauseBtn.innerHTML = isPaused ? pauseIcon : playIcon; pauseBtn.classList.toggle('paused', isPaused); }
         pauseBtn.addEventListener('click', togglePause);
 
-        // Adjusted Slideshow Camera Distances for Wide Gaps
+        const asteroidTarget = new THREE.Object3D(); asteroidTarget.position.set(46, 0, 0); scene.add(asteroidTarget);
+        const kuiperTarget = new THREE.Object3D(); kuiperTarget.position.set(190, 0, 0); scene.add(kuiperTarget);
+
         function buildSlideshowScenes() {
             const sceneDef = (targetObj, distance, azimuthDeg, elevationDeg, duration, note = '') => ({ targetObj, distance, azimuth: azimuthDeg * Math.PI / 180, elevation: elevationDeg * Math.PI / 180, duration, note });
             const moons = moonObjects.map(m => m.mesh);
             return [
-                sceneDef(sun, 120, 45, 30, 8, 'Solar System Overview'), sceneDef(sun, 16, 0, 20, 6, 'The Sun'), sceneDef(mercuryData.mesh, 2.5, 30, 15, 5), sceneDef(venusData.mesh, 3.5, 45, 25, 5), sceneDef(earthData.mesh, 3, 0, 30, 6), sceneDef(moons[0], 1.5, 60, 20, 4, 'Moon'), sceneDef(marsData.mesh, 2.8, 20, 15, 5), sceneDef(asteroidBelt, 25, 70, 40, 6, 'Asteroid Belt'), sceneDef(jupiterData.mesh, 7, 15, 10, 7), sceneDef(moons.find(m => m.name === 'Io'), 1.8, 90, 30, 4, 'Io'), sceneDef(saturnData.mesh, 8, 25, 15, 7), sceneDef(moons.find(m => m.name === 'Titan'), 2.2, 60, 20, 4, 'Titan'), sceneDef(uranusData.mesh, 5, 50, 25, 5), sceneDef(neptuneData.mesh, 5, 80, 30, 5), sceneDef(plutoData.mesh, 2.5, 30, 40, 5), sceneDef(kuiperBelt, 40, 45, 60, 6, 'Kuiper Belt'), sceneDef(sun, 150, 0, 45, 8, '')
+                sceneDef(sun, 120, 45, 30, 11, 'Solar System Overview'),
+                sceneDef(mercuryData.mesh, 1.5, 30, 15, 6.5),
+                sceneDef(venusData.mesh, 2.5, 45, 25, 6.5),
+                sceneDef(earthData.mesh, 2.2, 20, 30, 8),
+                sceneDef(moons[0], 1.0, 45, 20, 5.5, 'Moon'),
+                sceneDef(marsData.mesh, 1.8, 30, 15, 6.5),
+                sceneDef(asteroidTarget, 10, 70, 40, 8, 'Asteroid Belt'),
+                sceneDef(jupiterData.mesh, 5.5, 25, 10, 9),
+                sceneDef(moons.find(m => m.name === 'Io'), 1.2, 45, 30, 5.5, 'Io'),
+                sceneDef(saturnData.mesh, 6.5, 35, 15, 9),
+                sceneDef(moons.find(m => m.name === 'Titan'), 1.4, 45, 20, 5.5, 'Titan'),
+                sceneDef(uranusData.mesh, 3.5, 40, 25, 6.5),
+                sceneDef(neptuneData.mesh, 3.5, 45, 30, 6.5),
+                sceneDef(plutoData.mesh, 1.5, 30, 40, 6.5),
+                sceneDef(kuiperTarget, 40, 45, 60, 8, 'Kuiper Belt'),
+                sceneDef(sun, 150, 0, 45, 11, '')
             ];
         }
+
+        // --- NEW UPDATED LOGIC FOR CAMERA POSITIONING ---
         function getSceneCameraTarget(sceneDef, timeInScene) {
             const worldPos = new THREE.Vector3();
             if (sceneDef.targetObj.isMesh || sceneDef.targetObj.isPoints) sceneDef.targetObj.getWorldPosition(worldPos);
             else if (sceneDef.targetObj.position) worldPos.copy(sceneDef.targetObj.position);
+
+            // Calculate angle relative to the Sun to ensure we always view the lit face
+            let baseAzimuth = 0;
+            if (worldPos.lengthSq() > 0.1 && sceneDef.targetObj.name !== 'Sun') {
+                baseAzimuth = Math.atan2(worldPos.z, worldPos.x);
+            }
+
             const orbitAngle = sceneDef.duration > 0 ? (timeInScene / sceneDef.duration) * Math.PI * 0.4 : 0;
-            const camDir = new THREE.Vector3(Math.cos(sceneDef.azimuth + orbitAngle) * Math.cos(sceneDef.elevation), Math.sin(sceneDef.elevation), Math.sin(sceneDef.azimuth + orbitAngle) * Math.cos(sceneDef.elevation));
-            return { lookAt: worldPos, position: worldPos.clone().add(camDir.multiplyScalar(sceneDef.distance)) };
+            // Adding Math.PI offsets the camera to the sun-ward side of the planet
+            const finalAzimuth = baseAzimuth + Math.PI + sceneDef.azimuth + orbitAngle;
+
+            const camDir = new THREE.Vector3(
+                Math.cos(finalAzimuth) * Math.cos(sceneDef.elevation),
+                Math.sin(sceneDef.elevation),
+                Math.sin(finalAzimuth) * Math.cos(sceneDef.elevation)
+            );
+
+            // Offset the look-at target slightly DOWN so the planet appears HIGHER on the screen (clearing the UI)
+            const lookTarget = worldPos.clone();
+            lookTarget.y -= sceneDef.distance * 0.12;
+
+            return { lookAt: lookTarget, position: worldPos.clone().add(camDir.multiplyScalar(sceneDef.distance)) };
         }
+
         function stopSlideshow() { slideshowActive = false; slideshowBtn.classList.remove('active'); controls.enabled = true; fadePhase = 'idle'; fadeOverlay.style.opacity = '0'; currentScene = null; }
         function startSlideshow() { if (slideshowActive) return; slideshowActive = true; slideshowBtn.classList.add('active'); controls.enabled = false; scenes = buildSlideshowScenes(); currentSceneIndex = 0; currentScene = scenes[0]; fadePhase = 'fadeOut'; fadeStartTime = performance.now() / 1000; fadeOverlay.style.opacity = '0'; }
         slideshowBtn.addEventListener('click', (e) => { e.stopPropagation(); if (slideshowActive) stopSlideshow(); else startSlideshow(); });
@@ -1188,7 +1212,6 @@
             });
             dropdown.innerHTML = html;
 
-            // Add long press and select events seamlessly 
             document.querySelectorAll('#planet-dropdown .dropdown-item').forEach((btn, idx) => {
                 let pressTimer;
                 let isLongPress = false;
@@ -1211,12 +1234,11 @@
                 btn.addEventListener('touchcancel', cancelPress);
                 btn.addEventListener('touchmove', cancelPress);
 
-                // Prevent mobile context menu on hold
                 btn.addEventListener('contextmenu', e => e.preventDefault());
 
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (isLongPress) return; // Ignore click if size modal was triggered
+                    if (isLongPress) return;
                     stopSlideshow();
                     focusOnObject(categorized[idx].obj);
                     dropdown.classList.remove('open');
@@ -1224,7 +1246,6 @@
             });
         }
 
-        // Animation Loop
         const clock = new THREE.Clock();
         function animate() {
             requestAnimationFrame(animate);

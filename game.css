@@ -1,3 +1,5 @@
+/* game.css */
+
 #game-ui {
     position: fixed;
     inset: 0;
@@ -7,7 +9,7 @@
 
 #game-top-bar {
     position: fixed;
-    top: 65px;
+    top: 20px;
     left: 18px;
     display: flex;
     gap: 8px;
@@ -63,7 +65,6 @@
     user-select: none;
     -webkit-user-select: none;
     touch-action: none;
-    /* Prevents mobile scrolling while holding */
 }
 
 .game-ctrl:active {
@@ -83,6 +84,13 @@
 }
 
 @media (max-width: 768px) {
+    #game-top-bar {
+        top: 15px;
+        left: 10px;
+        right: 10px;
+        justify-content: space-between;
+    }
+
     #game-controls {
         padding: 0 15px;
         bottom: 15px;
